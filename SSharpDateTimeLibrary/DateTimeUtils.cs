@@ -25,6 +25,7 @@
 
 using System.Globalization;
 using System.Text;
+using System;
 
 namespace System
 	{
@@ -40,6 +41,25 @@ namespace System
 			return i - p;
 			}
 
+#if true
+		public static void ZeroPad (StringBuilder output, int digits, int len)
+			{
+			var buffer = new char[16];
+			int pos = 16;
+
+			do
+				{
+				buffer[--pos] = (char)('0' + digits % 10);
+				digits /= 10;
+				len--;
+				} while (digits > 0);
+
+			while (len-- > 0)
+				buffer[--pos] = '0';
+
+			output.Append (new string (buffer, pos, 16 - pos));
+			}
+#else
 		public static unsafe void ZeroPad (StringBuilder output, int digits, int len)
 			{
 			// more than enough for an int
@@ -58,7 +78,7 @@ namespace System
 
 			output.Append (new string (buffer, pos, 16 - pos));
 			}
-
+#endif
 		static int ParseQuotedString (string fmt, int pos, StringBuilder output)
 			{
 			// pos == position of " or '
@@ -129,15 +149,13 @@ namespace System
 				case 'M':
 					pattern = dfi.MonthDayPattern;
 					break;
+#if !NETCF
 				case 'o':
 				case 'O':
-#if NETCF
-					pattern = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffffffzzz";
-#else
 					pattern = dfi.RoundtripPattern;
-#endif
 					use_invariant = true;
 					break;
+#endif
 				case 'r':
 				case 'R':
 					pattern = dfi.RFC1123Pattern;
@@ -371,7 +389,7 @@ namespace System
 							// NOTE: .NET ignores quoted 'd' and reads it as day specifier but I think 
 							// that's wrong
 #if NETCF
-							result.Append (dfi.GetMonthName (month));
+							result.Append (/*saw_day_specifier ? dfi.GetMonthGenitiveName (month) :*/ dfi.GetMonthName (month));
 #else
 							result.Append (saw_day_specifier ? dfi.GetMonthGenitiveName (month) : dfi.GetMonthName (month));
 #endif
