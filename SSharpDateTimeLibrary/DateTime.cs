@@ -10,7 +10,7 @@ namespace SSharpDateTimeLibrary
 		private static int m_lastTickCount = 0;
 		private static long m_tickBase = 0;
 
-		public static int Offset
+		internal static int Offset
 			{
 			get { return m_offset; }
 			}
@@ -96,6 +96,42 @@ namespace SSharpDateTimeLibrary
 					m_tickBase += (long)Int32.MaxValue + 1;
 				m_lastTickCount = tickCount;
 				return tickCount + m_tickBase;
+				}
+			}
+		}
+
+	public static class DateTimeOffsetPrecise
+		{
+		public static DateTimeOffset Now
+			{
+			get
+				{
+				int offset = DateTimePrecise.Offset;
+
+				// find where we are based on the os tick 
+				int tick = CrestronEnvironment.TickCount % 1000;
+				// calculate our ms shift from our base m_offset 
+				int ms = (tick >= offset) ? (tick - offset) : (1000 - (offset - tick));
+				// build a new DateTime with our calculated ms 
+				// we use a new DateTime because some devices fill ms with a non-zero garbage value 
+				DateTimeOffset now = DateTimeOffset.Now;
+				return new DateTimeOffset (now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second, ms, now.Offset);
+				}
+			}
+		public static DateTimeOffset UtcNow
+			{
+			get
+				{
+				int offset = DateTimePrecise.Offset;
+
+				// find where we are based on the os tick 
+				int tick = CrestronEnvironment.TickCount % 1000;
+				// calculate our ms shift from our base m_offset 
+				int ms = (tick >= offset) ? (tick - offset) : (1000 - (offset - tick));
+				// build a new DateTime with our calculated ms 
+				// we use a new DateTime because some devices fill ms with a non-zero garbage value 
+				DateTimeOffset utcNow = DateTimeOffset.UtcNow;
+				return new DateTimeOffset (utcNow.Year, utcNow.Month, utcNow.Day, utcNow.Hour, utcNow.Minute, utcNow.Second, ms, utcNow.Offset);
 				}
 			}
 		}
