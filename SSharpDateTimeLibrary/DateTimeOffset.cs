@@ -39,6 +39,9 @@ using System.Runtime.InteropServices;
 namespace System
 	{
 	[Serializable]
+#if SSHARP
+	[SSMono.Runtime.Serialization.SerializableAttribute]
+#endif
 	[StructLayout (LayoutKind.Auto)]
 	public struct DateTimeOffset : IComparable, IFormattable,
 #if !NETCF
@@ -302,6 +305,8 @@ namespace System
 
 		public static DateTimeOffset Parse (string input, IFormatProvider formatProvider, DateTimeStyles styles)
 			{
+			styles = ValidateStyles (styles, "styles");
+
 			if (input == null)
 				throw new ArgumentNullException ("input");
 
@@ -331,6 +336,25 @@ namespace System
 				throw new FormatException ("The UTC representation falls outside the 1-9999 year range");
 
 			return dto;
+			}
+
+		private static DateTimeStyles ValidateStyles (DateTimeStyles style, string parameterName)
+			{
+			if ((style & ~(DateTimeStyles.RoundtripKind | DateTimeStyles.AssumeUniversal | DateTimeStyles.AssumeLocal | DateTimeStyles.AdjustToUniversal | DateTimeStyles.NoCurrentDateDefault | DateTimeStyles.AllowWhiteSpaces)) != DateTimeStyles.None)
+				{
+				throw new ArgumentException ("An undefined DateTimeStyles value is being used.", parameterName);
+				}
+			if (((style & DateTimeStyles.AssumeLocal) != DateTimeStyles.None) && ((style & DateTimeStyles.AssumeUniversal) != DateTimeStyles.None))
+				{
+				throw new ArgumentException ("The DateTimeStyles values AssumeLocal and AssumeUniversal cannot be used together.", parameterName);
+				}
+			if ((style & DateTimeStyles.NoCurrentDateDefault) != DateTimeStyles.None)
+				{
+				throw new ArgumentException ("The DateTimeStyles value 'NoCurrentDateDefault' is not allowed when parsing DateTimeOffset.", parameterName);
+				}
+			style &= ~DateTimeStyles.RoundtripKind;
+			style &= ~DateTimeStyles.AssumeLocal;
+			return style;
 			}
 
 		public static DateTimeOffset ParseExact (string input, string format, IFormatProvider formatProvider)
@@ -564,11 +588,23 @@ namespace System
 					// The documentation is incorrect, they claim that K is the same as 'zz', but
 					// it actually allows the format to contain 4 digits for the offset
 					case 'K':
+						if (offset != TimeSpan.MinValue)
+							return false;
+
 						tokLen = 1;
+						if (ii < input.Length && (input[ii] == 'z' || input[ii] == 'Z'))
+							{
+							offset = TimeSpan.Zero;
+							++ii;
+							break;
+							}
+
 						int off_h, off_m = 0, sign;
 						temp_int = 0;
 						ii += ParseEnum (input, ii, new string[] { "-", "+" }, allow_white_spaces, out sign);
-						ii += ParseNumber (input, ii, 4, false, false, out off_h);
+						ii += ParseNumber (input, ii, 2, true, false, out off_h);
+						ii += ParseEnum (input, ii, new string[] { dfi.TimeSeparator }, false, out temp_int);
+						ii += ParseNumber (input, ii, 2, true, false, out off_m);
 						if (off_h == -1 || off_m == -1 || sign == -1)
 							return false;
 
@@ -598,6 +634,7 @@ namespace System
 							sign = -1;
 						offset = new TimeSpan (sign * off_h, sign * off_m, 0);
 						break;
+
 					case ':':
 						tokLen = 1;
 						ii += ParseEnum (input, ii, new string[] { dfi.TimeSeparator }, false, out temp_int);
@@ -661,35 +698,44 @@ namespace System
 				}
 
 			//Console.WriteLine ("{0}-{1}-{2} {3}:{4} {5}", year, month, day, hour, minute, offset);
+
+			if (year <= 0 || month <= 0 || day <= 0)
+				return false;
+
+			if (hour < 0) hour = 0;
+			if (minute < 0) minute = 0;
+			if (second < 0) second = 0;
+			if (fraction < 0) fraction = 0;
+
 			if (offset == TimeSpan.MinValue)
 				{
 				if ((styles & DateTimeStyles.AssumeUniversal) != 0)
 					{
 					offset = TimeSpan.Zero;
 					}
-				else if ((styles & DateTimeStyles.AssumeLocal) != 0)
+				else
 					{
-					offset = use_invariants ?
-						TimeSpan.Zero :
-						TimeZone.CurrentTimeZone.GetUtcOffset (DateTime.Now);
+					var dt = new DateTime (year, month, day, hour, minute, second, 0);
+
+					if ((styles & DateTimeStyles.AssumeLocal) != 0)
+						{
+						offset = use_invariants ?
+							TimeSpan.Zero :
+							TimeZone.CurrentTimeZone.GetUtcOffset (dt);
+						}
+					else
+						{
+						offset = TimeZone.CurrentTimeZone.GetUtcOffset (dt);
+						}
 					}
 				}
 
+			result = new DateTimeOffset (year, month, day, hour, minute, second, 0, offset);
+			result = result.AddSeconds (fraction);
+			if ((styles & DateTimeStyles.AdjustToUniversal) != 0)
+				result = result.ToUniversalTime ();
 
-			if (hour < 0) hour = 0;
-			if (minute < 0) minute = 0;
-			if (second < 0) second = 0;
-			if (fraction < 0) fraction = 0;
-			if (year > 0 && month > 0 && day > 0)
-				{
-				result = new DateTimeOffset (year, month, day, hour, minute, second, 0, offset);
-				result = result.AddSeconds (fraction);
-				if ((styles & DateTimeStyles.AdjustToUniversal) != 0)
-					result = result.ToUniversalTime ();
-				return true;
-				}
-
-			return false;
+			return true;
 			}
 
 		private static int ParseNumber (string input, int pos, int digits, bool leading_zero, bool allow_leading_white, out int result)

@@ -60,6 +60,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\ProgramData\Crestron\SDK\SimplSharpHelperInterface.dll</HintPath>
     </Reference>
+    <Reference Include="SSMonoSupportLibrary, Version=1.0.0.12476, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\SSMonoSupportLibrary\bin\Release\SSMonoSupportLibrary.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
@@ -78,13 +82,15 @@
         <ProgramIdTag>SSharpDateTimeLibrar</ProgramIdTag>
         <SystemName>SSharpDateTimeLibrary</SystemName>
         <Programmer />
-        <ArchiveFilename>C:\Projects\Crestron\Simpl# Libraries\SSharpDateTimeLibrary\SSharpDateTimeLibrary\bin\Debug\SSharpDateTimeLibrary.clz</ArchiveFilename>
+        <ArchiveFilename>C:\Projects\Crestron\Simpl# Libraries\SSharpDateTimeLibrary\SSharpDateTimeLibrary\bin\Release\SSharpDateTimeLibrary.clz</ArchiveFilename>
         <MinFirmwareVersion>1.007.0017</MinFirmwareVersion>
-        <CompiledOn>4/4/2015 8:29:37 AM</CompiledOn>
+        <CompiledOn>10/11/2015 9:33:13 AM</CompiledOn>
         <AdditionalInfo />
         <EmbedSourceArchive>False</EmbedSourceArchive>
         <CopyTo />
-        <OriginalReferenceSources />
+        <OriginalReferenceSources>
+          <Reference sourceFilename="../../SSMonoSupportLibrary/bin/Release/SSMonoSupportLibrary.dll" referenceName="SSMonoSupportLibrary" />
+        </OriginalReferenceSources>
       </FlavorProperties>
     </VisualStudio>
   </ProjectExtensions>
