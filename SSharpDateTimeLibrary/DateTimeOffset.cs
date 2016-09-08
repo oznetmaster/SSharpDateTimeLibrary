@@ -30,18 +30,13 @@
 
 using System;
 using System.Globalization;
-#if !NETCF
 using System.Runtime.Serialization;
-#endif
 using System.Text;
 using System.Runtime.InteropServices;
 
 namespace System
 	{
 	[Serializable]
-#if SSHARP
-	[SSMono.Runtime.Serialization.SerializableAttribute]
-#endif
 	[StructLayout (LayoutKind.Auto)]
 	public struct DateTimeOffset : IComparable, IFormattable,
 #if !NETCF
